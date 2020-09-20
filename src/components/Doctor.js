@@ -1,17 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { makeStyles } from "@material-ui/core/styles";
+import Dropdown from "react-dropdown";
+import "react-dropdown/style.css";
 
 import { getRequest, postRequest } from "../common/api.js";
 import style from "../common/style";
+import { splitString } from "../common/helper";
 import Preloader from "./Preloader";
 import AddIcon from "@material-ui/icons/ControlPoint";
 
 const styleAddIcon = {
   position: "absolute",
-  top: "190px",
-  right: "160px",
+  top: "10px",
+  right: "150px",
   fill: style.secondary,
   cursor: "pointer",
+};
+
+const styleDropdown = {
+  marginBottom: "20px",
+};
+
+const styleForm = {
+  position: "relative",
+  border: "1px solid red",
 };
 
 const useStyles = makeStyles(() => ({
@@ -20,6 +32,19 @@ const useStyles = makeStyles(() => ({
     padding: "0",
     margin: "0",
     boxSizing: "border-box",
+
+    "& td": {
+      // border: "1px solid blue",
+      height: "35px",
+      textAlign: "left",
+      width: "250px",
+      borderBottom: "1px solid rgba(1,1,1,0.1)",
+    },
+    "& th": {
+      textAlign: "left",
+      height: "50px",
+      // border: "1px solid red",
+    },
   },
   topBar: {
     width: "100%",
@@ -101,6 +126,39 @@ const useStyles = makeStyles(() => ({
     border: "1px solid rgba(1,1,1,0.4)",
     marginBottom: "20px",
   },
+  trow: {
+    width: "200px",
+    textAlign: "center",
+  },
+  tabValue: {
+    align: "right",
+  },
+  buttons: {
+    padding: "10px 0",
+  },
+  apptBtn: {
+    background: style.secondary,
+    border: "none",
+    color: "white",
+    width: "250px",
+    height: "40px",
+    marginRight: "10px",
+    cursor: "pointer",
+  },
+  orBox: {
+    padding: "20px 0",
+    // border: "1px solid red",
+  },
+  dropdown: {
+    marginBottom: "20px",
+  },
+  btnSubmit: {
+    background: style.primary,
+    color: "white",
+    height: "40px",
+    width: "100px",
+    border: "none",
+  },
 }));
 
 const Doctor = () => {
@@ -111,45 +169,47 @@ const Doctor = () => {
     gender: "Male",
   });
 
+  const [areaStats, setAreaStats] = React.useState({ percent: {}, count: {} });
   const [payload, setPayload] = useState({
-    fever: {
-      feverTemp: "",
-      feverType: "",
+    symptoms: {
+      fever: {
+        feverTemp: "",
+        feverType: "",
+      },
+      gi: {
+        vomit: true,
+        diarhhea: true,
+        abdomenPain: true,
+      },
+      bodyPain: {
+        bodyPainType: "",
+        headache: true,
+      },
+      respDis: {
+        cough: "",
+        lossSmell: true,
+        soreThroat: true,
+        shortnessBreath: true,
+        runnyNose: true,
+        noseBlock: true,
+      },
+      days: 0,
+      ui: true,
+      allergy: 0,
+      medicRelief: true,
+      covidConnect: true,
     },
-    gi: {
-      vomit: true,
-      diarhhea: true,
-      abdomenPain: true,
-    },
-    bodyPain: {
-      bodyPainType: "",
-      headache: true,
-    },
-    respDis: {
-      cough: "",
-      lossSmell: true,
-      soreThroat: true,
-      shortnessBreath: true,
-      runnyNose: true,
-      noseBlock: true,
-    },
-    days: 0,
-    ui: true,
-    allergy: 0,
-    medicRelief: true,
-    covidConnect: true,
   });
   const [loading, setLoading] = React.useState(false);
   const [screen, setScreen] = React.useState("report");
-
   const [presc, setPresc] = React.useState({
     count: 1,
     data: [{ medicine: `medicine_1`, dosage: `dosage_1` }],
   });
 
   const [ticketId, setTicketId] = React.useState("");
-
   const [formData, setFormData] = React.useState([]);
+  const [feedbackData, setFeedbackData] = React.useState({});
 
   function updatePrescForm() {
     let newCount = presc.count + 1;
@@ -184,11 +244,139 @@ const Doctor = () => {
   function formChangeHandler(e) {
     let newData = { ...formData };
     newData[e.target.name] = e.target.value;
-
     setFormData(newData);
   }
 
-  // medicine_1 : "asas" , dosage_1:assa , medicine_2:asas, dosage_2:'as'
+  function appointmentSubmitHandler(type) {
+    postRequest("Appointment/change", {
+      ticket_id: parseInt(ticketId),
+      type: type,
+      date: "21 Sept",
+      time_slot: "2PM-5PM",
+    })
+      .then((resp) => {
+        onSubmitResponse();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+
+  function onSubmitResponse() {
+    getRequest(`Tickets/${ticketId}`).then((resp2) => {
+      let respData = resp2.data;
+      let data = resp2.data.symptoms.symptoms;
+      let feverTemp;
+      let feverType;
+      let bodyPainType;
+      let coughType;
+
+      switch (data.fever_temp) {
+        case 0:
+          feverTemp = "Not Measured";
+          break;
+        case 1:
+          feverTemp = "Mild (98F to 100F)";
+          break;
+        case 2:
+          feverTemp = "Moderate (100F to 102F)";
+          break;
+        case 3:
+          feverTemp = "High (Above 102F)";
+        default:
+          feverType = "None";
+          break;
+      }
+
+      switch (data.fever_type) {
+        case 0:
+          feverType = "Continous";
+          break;
+        case 1:
+          feverType = "With Chills";
+          break;
+        case 2:
+          feverType = "Increase at night";
+        default:
+          feverType = "None";
+          break;
+      }
+
+      switch (data.body_pain_type) {
+        case 0:
+          bodyPainType = "Weakness and fatigue";
+          break;
+        case 1:
+          bodyPainType = "Joint pain & Lower back pain";
+          break;
+        case 2:
+          bodyPainType = "Chestpain";
+          break;
+        case 3:
+          bodyPainType = "Stiffness & Swells";
+        default:
+          bodyPainType = "None";
+          break;
+      }
+
+      switch (data.cough) {
+        case 0:
+          coughType = "Dry Cough";
+          break;
+        case 1:
+          coughType = "Sore Throat";
+          break;
+        case 2:
+          coughType = "Wet cough with sputtum";
+          break;
+        default:
+          coughType = "None";
+          break;
+      }
+
+      let hasPresc = true;
+      if (respData.prescription) {
+        hasPresc = true;
+      } else {
+        hasPresc = false;
+      }
+
+      let stateData = {
+        covidClass: respData.covid_class,
+        hasPresc,
+        symptoms: {
+          days: data.days_since_onset,
+          ui: bool(data.ui),
+          allergy: bool(data.allergy),
+          feverBool: bool(data.fever),
+          covidConnect: bool(data.covid_connect),
+          fever: {
+            feverType,
+            feverTemp,
+          },
+          gi: {
+            vomit: bool(data.vomit),
+            diarrhea: bool(data.diarrhea),
+            abdominalPain: bool(data.abdominal_pain),
+          },
+          bodyPain: {
+            bodyPainType,
+            headache: bool(data.headache),
+          },
+          respDis: {
+            cough: coughType,
+            lossOfSmell: bool(data["loss_of_smell_taste"]),
+            soreThroat: bool(data.sore_throat),
+            runnyNose: bool(data.runny_nose),
+            noseBlock: bool(data["nose_block"]),
+            shortnessBreath: bool(data["shortness_of_breath"]),
+          },
+        },
+      };
+      console.log(stateData);
+      setPayload(stateData);
+    });
+  }
 
   function formSubmitHandler(e) {
     e.preventDefault();
@@ -204,20 +392,50 @@ const Doctor = () => {
       }
     }
 
-    console.log(actualData);
+    let ticketClose = true;
+    if (payload.covidClass === "Medium") {
+      ticketClose = false;
+    } else if (payload.covidClass === "Low") {
+      ticketClose = true;
+    }
 
+    let feedbackData = {
+      ticket_id: ticketId,
+      feedback: feedbackData.feedback,
+      monitoring_days: feedbackData.monitoring_days,
+      ticket_close: ticketClose,
+    };
+
+    console.log(actualData);
     let postData = {
       ticket_id: ticketId,
       prescription: actualData,
     };
-
     postRequest("Prescription/add", postData)
       .then((resp) => {
         console.log("prescription submited");
+
+        postRequest("Tickets/feedback")
+          .then((resp) => {
+            console.log("feedback submitted");
+            onSubmitResponse();
+          })
+          .catch((err) => {
+            console.log(err);
+          });
       })
       .catch((err) => {
         console.log(err);
       });
+  }
+
+  function onSelectDays(e) {
+    console.log(e);
+    setFeedbackData(e);
+  }
+
+  function onSelectFeedback(e) {
+    console.log(e);
   }
 
   useEffect(() => {
@@ -229,8 +447,10 @@ const Doctor = () => {
         setUser(resp.data);
         let ticketId = resp.data.active_ticket.ticket_id;
         setTicketId(ticketId);
-        getRequest(`Tickets/symptoms/${ticketId}`).then((resp2) => {
-          let data = resp2.data.symptoms.symptoms_info;
+        getRequest(`Tickets/${ticketId}`).then((resp2) => {
+          let respData = resp2.data;
+          let data = resp2.data.symptoms.symptoms;
+
           let feverTemp;
           let feverType;
           let bodyPainType;
@@ -299,34 +519,44 @@ const Doctor = () => {
               break;
           }
 
-          console.log(typeof data.sore_throat);
+          let hasPresc = true;
+          if (respData.prescription) {
+            hasPresc = true;
+          } else {
+            hasPresc = false;
+          }
 
           let stateData = {
-            days: data.days_since_onset,
-            ui: bool(data.ui),
-            allergy: bool(data.allergy),
-            feverBool: bool(data.fever),
-            covidConnect: bool(data.covid_connect),
-            fever: {
-              feverType,
-              feverTemp,
-            },
-            gi: {
-              vomit: bool(data.vomit),
-              diarrhea: bool(data.diarrhea),
-              abdominalPain: bool(data.abdominal_pain),
-            },
-            bodyPain: {
-              bodyPainType,
-              headache: bool(data.headache),
-            },
-            respDis: {
-              cough: coughType,
-              lossOfSmell: bool(data["loss_of_smell_taste"]),
-              soreThroat: bool(data.sore_throat),
-              runnyNose: bool(data.runny_nose),
-              noseBlock: bool(data["nose_block"]),
-              shortnessBreath: bool(data["shortness_of_breath"]),
+            covidClass: respData.covid_class,
+            hasPresc,
+            ticketStatus: respData.ticket_status,
+            symptoms: {
+              days: data.days_since_onset,
+              ui: bool(data.ui),
+              allergy: bool(data.allergy),
+              feverBool: bool(data.fever),
+              covidConnect: bool(data.covid_connect),
+              fever: {
+                feverType,
+                feverTemp,
+              },
+              gi: {
+                vomit: bool(data.vomit),
+                diarrhea: bool(data.diarrhea),
+                abdominalPain: bool(data.abdominal_pain),
+              },
+              bodyPain: {
+                bodyPainType,
+                headache: bool(data.headache),
+              },
+              respDis: {
+                cough: coughType,
+                lossOfSmell: bool(data["loss_of_smell_taste"]),
+                soreThroat: bool(data.sore_throat),
+                runnyNose: bool(data.runny_nose),
+                noseBlock: bool(data["nose_block"]),
+                shortnessBreath: bool(data["shortness_of_breath"]),
+              },
             },
           };
           console.log(stateData);
@@ -336,6 +566,13 @@ const Doctor = () => {
       .finally(() => {
         setLoading(false);
       });
+  }, []);
+  useEffect(() => {
+    let userId = localStorage.getItem("userId");
+    getRequest(`Users/area/stats/${userId}`).then((resp) => {
+      setAreaStats(resp.data.area_stats);
+      console.log(resp.data.area_stats);
+    });
   }, []);
 
   return (
@@ -386,22 +623,28 @@ const Doctor = () => {
           <div className={classes.main}>
             {screen === "report" ? (
               <div className={classes.reportRoot}>
-                <div class={classes.reportSec}>
+                <div className={classes.reportSec}>
                   <div className={classes.fieldCont}>
                     <span className={classes.respFieldHeader}>
                       No of days since onset of symptomps-
                     </span>
-                    <span className={classes.respValue}>{payload.days}</span>
+                    <span className={classes.respValue}>
+                      {payload.symptoms.days}
+                    </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respFieldHeader}>Allergy- </span>
-                    <span className={classes.respValue}>{payload.allergy}</span>
+                    <span className={classes.respValue}>
+                      {payload.symptoms.allergy}
+                    </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respFieldHeader}>
                       Urinary Infection{" "}
                     </span>
-                    <span className={classes.respValue}>{payload.ui}</span>
+                    <span className={classes.respValue}>
+                      {payload.symptoms.ui}
+                    </span>
                   </div>
                 </div>
                 <div className={classes.reportSec}>
@@ -410,19 +653,19 @@ const Doctor = () => {
                   >
                     Fever -
                   </span>
-                  <span> {payload.feverBool}</span>
-                  {payload.feverBool === "Yes" ? (
-                    <div class={classes.reportSec}>
+                  <span> {payload.symptoms.feverBool}</span>
+                  {payload.symptoms.feverBool === "Yes" ? (
+                    <div className={classes.reportSec}>
                       <div className={classes.fieldCont}>
                         <span className={classes.respField}>Fever Temp - </span>
                         <span className={classes.respValue}>
-                          {payload.fever.feverTemp}
+                          {payload.symptoms.fever.feverTemp}
                         </span>
                       </div>
                       <div className={classes.fieldCont}>
                         <span className={classes.respField}>Fever Type - </span>
                         <span className={classes.respValue}>
-                          {payload.fever.feverType}
+                          {payload.symptoms.fever.feverType}
                         </span>
                       </div>
                     </div>
@@ -440,19 +683,19 @@ const Doctor = () => {
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Vomit - </span>
                     <span className={classes.respValue}>
-                      {payload.gi.vomit}
+                      {payload.symptoms.gi.vomit}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Diarrhea - </span>
                     <span className={classes.respValue}>
-                      {payload.gi.diarrhea}
+                      {payload.symptoms.gi.diarrhea}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Abdominal Pain - </span>
                     <span className={classes.respValue}>
-                      {payload.gi.abdominalPain}
+                      {payload.symptoms.gi.abdominalPain}
                     </span>
                   </div>
                 </div>
@@ -466,13 +709,13 @@ const Doctor = () => {
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Body Pain Type - </span>
                     <span className={classes.respValue}>
-                      {payload.bodyPain.bodyPainType}
+                      {payload.symptoms.bodyPain.bodyPainType}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Headache - </span>
                     <span className={classes.respValue}>
-                      {payload.bodyPain.headache}
+                      {payload.symptoms.bodyPain.headache}
                     </span>
                   </div>
                 </div>
@@ -486,7 +729,7 @@ const Doctor = () => {
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Cough - </span>
                     <span className={classes.respValue}>
-                      {payload.respDis.cough}
+                      {payload.symptoms.respDis.cough}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
@@ -494,19 +737,19 @@ const Doctor = () => {
                       Loss of smell and taste -
                     </span>
                     <span className={classes.respValue}>
-                      {payload.respDis.lossOfSmell}
+                      {payload.symptoms.respDis.lossOfSmell}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Sore Throat - </span>
                     <span className={classes.respValue}>
-                      {payload.respDis.soreThroat}
+                      {payload.symptoms.respDis.soreThroat}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
                     <span className={classes.respField}>Runny Nose - </span>
                     <span className={classes.respValue}>
-                      {payload.respDis.runnyNose}
+                      {payload.symptoms.respDis.runnyNose}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
@@ -514,7 +757,7 @@ const Doctor = () => {
                       Shortnes of breath -
                     </span>
                     <span className={classes.respValue}>
-                      {payload.respDis.soreThroat}
+                      {payload.symptoms.respDis.soreThroat}
                     </span>
                   </div>
                 </div>
@@ -527,40 +770,136 @@ const Doctor = () => {
                       Recent Covid Interactions -
                     </span>
                     <span className={classes.respValue}>
-                      {payload.covidConnect}
+                      {payload.symptoms.covidConnect}
                     </span>
                   </div>
+                </div>
+
+                <div className={classes.reportSec}>
+                  <div className={classes.respFieldHeader}>Area Stats</div>
+                  <table>
+                    <tr>
+                      <th>Type</th>
+                      <th>Value</th>
+                    </tr>
+                    {Object.entries(areaStats.percent).map((item) => {
+                      return (
+                        <tr className={classes.trow}>
+                          <td>{splitString(item[0])}</td>
+                          <td align="right" className={classes.tabValue}>
+                            {item[1]}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {Object.entries(areaStats.count).map((item) => {
+                      return (
+                        <tr className={classes.trow}>
+                          <td>{splitString(item[0])}</td>
+                          <td align="right" className={classes.tabValue}>
+                            {item[1]}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </table>
                 </div>
               </div>
             ) : (
               <div>
-                <AddIcon
-                  style={styleAddIcon}
-                  onClick={updatePrescForm}
-                  fontSize="large"
-                />
-                <form onChange={formChangeHandler} onSubmit={formSubmitHandler}>
-                  {/*//////////////////////////////////////////////////////////////////////////////////////////////////*/}
-                  {presc.data.map((item, i) => {
-                    return (
-                      <div className={classes.row}>
-                        <input
-                          className={classes.input}
-                          type="text"
-                          name={`medicine_${i}`}
-                          placeholder="Medicine"
-                        ></input>
-                        <input
-                          className={classes.input}
-                          type="text"
-                          name={`dosage_${i}`}
-                          placeholder="Dosage"
-                        ></input>
-                      </div>
-                    );
-                  })}
+                <form
+                  style={styleForm}
+                  onChange={formChangeHandler}
+                  onSubmit={formSubmitHandler}
+                >
+                  <AddIcon
+                    style={styleAddIcon}
+                    onClick={updatePrescForm}
+                    fontSize="large"
+                  />
+                  {payload.ticketStatus === "closed" ? (
+                    <div>This ticket has already closed</div>
+                  ) : (
+                    <>
+                      {!payload.hasPresc ? (
+                        <>
+                          <>
+                            {payload.covidClass === "Medium" ? (
+                              <>
+                                <div className={classes.buttons}>
+                                  <button
+                                    onClick={() => {
+                                      appointmentSubmitHandler("covid");
+                                    }}
+                                    className={classes.apptBtn}
+                                  >
+                                    Recommend Covid Test
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      appointmentSubmitHandler("offline");
+                                    }}
+                                    className={classes.apptBtn}
+                                  >
+                                    Recommend Offline consultation
+                                  </button>
+                                </div>
+                                <div className={classes.orBox}>
+                                  Or Prescrbe medicine
+                                </div>
+                              </>
+                            ) : (
+                              <></>
+                            )}
+                          </>
+                          {presc.data.map((item, i) => {
+                            return (
+                              <div className={classes.row}>
+                                <input
+                                  className={classes.input}
+                                  type="text"
+                                  name={`medicine_${i}`}
+                                  placeholder="Medicine"
+                                ></input>
+                                <input
+                                  className={classes.input}
+                                  type="text"
+                                  name={`dosage_${i}`}
+                                  placeholder="Dosage"
+                                ></input>
+                              </div>
+                            );
+                          })}
+                        </>
+                      ) : (
+                        <div>Already Prescrbibed</div>
+                      )}
+                    </>
+                  )}
 
-                  <button>Submit</button>
+                  <Dropdown
+                    className={classes.dropdown}
+                    options={[
+                      { value: 3, label: "3" },
+                      { value: 5, label: "5" },
+                    ]}
+                    onChange={onSelectDays}
+                    // value={"Material"}
+                    placeholder="Number of days to monitor patient"
+                  />
+                  <Dropdown
+                    className={classes.dropdown}
+                    options={[
+                      { value: "malerial", label: "Malerial" },
+                      { value: "bacterial", label: "Bacterial" },
+                      { value: "viral", label: "Viral" },
+                    ]}
+                    onChange={onSelectFeedback}
+                    // value={"Material"}
+                    placeholder="Type of illness"
+                  />
+
+                  <button className={classes.btnSubmit}>Submit</button>
                 </form>
               </div>
             )}

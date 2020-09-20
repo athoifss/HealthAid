@@ -15,7 +15,9 @@ import Stats from "./Stats";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Tickets from "./Tickets";
+import TicketDetails from "./TicketDetails";
 import SweetAlert from "sweetalert2-react";
+import Profile from "./Profile";
 
 const drawerWidthVal = 280;
 
@@ -86,8 +88,6 @@ const useStyles = makeStyles(() => ({
 
 export default function PersistentDrawerLeft() {
   const classes = useStyles();
-  const [url, setUrl] = React.useState();
-
   const [openModal, setOpenModal] = React.useState(false);
 
   const handleOpenModal = () => {
@@ -146,6 +146,13 @@ export default function PersistentDrawerLeft() {
           />
           <Route
             exact
+            path="/profile"
+            render={(props) => {
+              return <Profile />;
+            }}
+          />
+          <Route
+            exact
             path="/tickets"
             render={(props) => {
               return (
@@ -156,10 +163,8 @@ export default function PersistentDrawerLeft() {
               );
             }}
           />
-
           <Route
-            exact
-            path="/tickets/details"
+            path="/tickets/details/"
             render={(props) => {
               return <TicketDetails />;
             }}
@@ -169,7 +174,7 @@ export default function PersistentDrawerLeft() {
             exact
             path="/"
             render={(props) => {
-              return <Redirect to="/tickets" />;
+              return <Redirect to="/profile" />;
             }}
           />
         </div>
@@ -195,7 +200,7 @@ export default function PersistentDrawerLeft() {
                 <div className={classes.modalContent}>
                   <Iframe
                     style={styleIframe}
-                    url={`https://healthaidbot.azurewebsites.net/?userId=${localStorage.getItem(
+                    url={`http://healthbot.centralindia.azurecontainer.io:8080/?userId=${localStorage.getItem(
                       "userId"
                     )}`}
                     width="500px"

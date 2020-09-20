@@ -7,7 +7,7 @@ import AddIcon from "@material-ui/icons/ControlPoint";
 import Backdrop from "@material-ui/core/Backdrop";
 import { Fade } from "@material-ui/core";
 import Modal from "@material-ui/core/Modal";
-
+import { Link, useHistory } from "react-router-dom";
 import style from "../common/style";
 const useStyles = makeStyles(() => ({
   root: {
@@ -25,8 +25,11 @@ const useStyles = makeStyles(() => ({
     display: "flex",
     alignItems: "center",
     background: "rgba(1,1,1,0.1)",
-    transition: "all 0.3s",
+    transition: "all 0.2s",
     cursor: "pointer",
+    "&:hover": {
+      transform: "scale(1.05)",
+    },
   },
   cardLeft: {
     width: "50%",
@@ -51,7 +54,7 @@ const useStyles = makeStyles(() => ({
     background: "rgba(1,1,1,0.2)",
     display: "block",
     marginLeft: "auto",
-    width: "150px",
+    width: "200px",
     lineHeight: "40px",
     height: "40px",
     padding: "0 5px",
@@ -103,7 +106,6 @@ const useStyles = makeStyles(() => ({
   modalContent: {
     display: "flex",
     flexDirection: "column",
-    // alignItems: "center",
     border: "none",
     padding: "5px 20px",
     background: "white",
@@ -126,19 +128,11 @@ const useStyles = makeStyles(() => ({
     fontSize: "2em",
     cursor: "pointer",
   },
-  scale: {
-    transform: "scale(1.05)",
-  },
 }));
-
-// appt: data.appointment,
-// apptType: data.appointmentType,
-// feverClass: data.predicted_fever_class,
 
 const Tickets = (props) => {
   const classes = useStyles();
   const [ticket, setTicket] = useState([]);
-
   const [ticketClicked, setTicketClicked] = React.useState(0);
 
   const [ticketModal, setTicketModal] = React.useState({
@@ -153,8 +147,6 @@ const Tickets = (props) => {
   const [openModal, setOpenModal] = React.useState();
   const [isOpenAddText, setIsOpenAddText] = useState(false);
 
-  const [isHoverCard, setIsHoverCard] = React.useState(false);
-
   function handleOpenModalAppt() {
     setOpenModal(true);
   }
@@ -163,11 +155,15 @@ const Tickets = (props) => {
     setOpenModal(false);
   }
 
+  let history = useHistory();
   function handleTicketClick(id) {
+    history.push(`tickets/details/${id}`);
+  }
+
+  function handleApptClick(id) {
     setTicketClicked(id);
     getRequest(`Tickets/${id}`).then((resp) => {
       let data = resp.data;
-
       let newTicketModal = {
         userId: data.user_id,
         status: data.ticket_status,
@@ -211,13 +207,13 @@ const Tickets = (props) => {
     })
       .then((resp) => {
         let stateData = [];
-        let covidClass = "";
-        if (resp.data["history"]["covid_class"]) {
-          covidClass = resp.data["history"].covid_class;
-        } else {
-          covidClass = "N/A (no consulation done)";
-        }
         resp.data["history"].forEach((data) => {
+          let covidClass = "";
+          if (data.covid_class) {
+            covidClass = data.covid_class;
+          } else {
+            covidClass = "N/A (no consulation done)";
+          }
           stateData.push({
             userId: data.user_id,
             status: data.ticket_status,
@@ -258,14 +254,16 @@ const Tickets = (props) => {
         />
       </div>
       {ticket.map((item) => {
+        {
+          console.log(item.classes);
+        }
         return (
           <div
-            key={item.ticketId}
-            className={`${classes.ticketCard} ${
-              isHoverCard ? classes.scale : ""
-            }`}
-            onMouseEnter={() => setIsHoverCard(true)}
-            onMouseLeave={() => setIsHoverCard(false)}
+            key={`${item.ticketId}_${item.classes}`}
+            className={classes.ticketCard}
+            onClick={() => {
+              handleTicketClick(item.ticketId);
+            }}
           >
             <div className={classes.cardLeft}>
               <div className={`${classes.createdDate} ${classes.cardItem}`}>
@@ -292,7 +290,10 @@ const Tickets = (props) => {
             <div className={classes.cardRight}>
               {item.status === "open" ? (
                 <button
-                  onClick={props.handleOpenModal}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    props.handleOpenModal();
+                  }}
                   className={`${classes.btnBot} ${classes.btnCard}`}
                 >
                   Consult Now
@@ -304,7 +305,7 @@ const Tickets = (props) => {
                 >
                   Update Symptomps
                 </button>
-              ) : item.status === "Consulting" ? (
+              ) : item.status === "consulting" ? (
                 <div className={`${classes.btnClosed}`}>
                   Awating Doctor Response
                 </div>
@@ -322,8 +323,9 @@ const Tickets = (props) => {
               )}
               {item.hasAppt ? (
                 <button
-                  onClick={() => {
-                    handleTicketClick(item.ticketId);
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleApptClick(item.ticketId);
                   }}
                   className={`${classes.btnBot} ${classes.btnCard}`}
                 >
@@ -334,6 +336,7 @@ const Tickets = (props) => {
               )}
             </div>
           </div>
+          // </Link>
         );
       })}
       <Modal
