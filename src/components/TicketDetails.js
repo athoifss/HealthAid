@@ -89,7 +89,7 @@ const TicketDetails = () => {
         data = ticket;
       } else {
         data = resp.data.symptoms.symptoms;
-        comArray = data.comorbidities;
+        comArray = resp.data.symptoms.comorbidities;
       }
       let respData = resp.data;
       let feverTemp;
@@ -97,7 +97,10 @@ const TicketDetails = () => {
       let bodyPainType;
       let coughType;
 
-      let comString = comArray.join(",");
+      let comArrNew = comArray.map((item) => {
+        return capitaliseWord(item);
+      });
+      let comString = comArrNew.join(",");
 
       switch (data.fever_temp) {
         case 0:
@@ -229,13 +232,7 @@ const TicketDetails = () => {
                   })}
                 </div>
               ) : (
-                <div>
-                  {ticket.ticketStatus === "closed" ? (
-                    <em>Ticket has been closed with no prescription</em>
-                  ) : (
-                    <em>Waiting for remote doctor to prescribe medicines</em>
-                  )}
-                </div>
+                <div>No Prescription</div>
               )}
             </div>
           </div>
@@ -246,7 +243,7 @@ const TicketDetails = () => {
                 <div className={classes.reportSec}>
                   <div className={classes.fieldCont}>
                     <span className={classes.respFieldHeader}>
-                      Comorbidities
+                      Comorbidities{" "}
                     </span>
                     <span className={classes.respValue}>
                       {ticket.comString}

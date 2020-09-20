@@ -9,6 +9,8 @@ import { splitString } from "../common/helper";
 import Preloader from "./Preloader";
 import AddIcon from "@material-ui/icons/ControlPoint";
 
+import { capitaliseWord } from "../common/helper";
+
 const styleAddIcon = {
   position: "absolute",
   right: "180px",
@@ -41,31 +43,32 @@ const useStyles = makeStyles(() => ({
   },
   topBar: {
     width: "100%",
-    height: "150px",
+    height: "120px",
     background: style.primary,
     display: "flex",
     color: "white",
   },
   left: {
-    width: "40%",
+    width: "70%",
+    borderRight: "1px solid white",
   },
   topLeftTop: {
-    height: "50px",
+    height: "40px",
     lineHeight: "50px",
     fontSize: "1.8em",
-    paddingTop: "13px",
+    paddingTop: "17px",
   },
   topLeftBottom: {
     display: "flex",
     alignItems: "flex-end",
     marginTop: "auto",
-    height: "100px",
+    height: "80px",
   },
   btnReport: {
     border: "none",
     width: "120px",
     height: "40px",
-    marginRight: "1px",
+    marginRight: "5px",
     cursor: "pointer",
     background: "transparent",
     color: "white",
@@ -80,13 +83,15 @@ const useStyles = makeStyles(() => ({
     color: "white",
   },
   right: {
-    paddingTop: "20px",
-    width: "60%",
+    paddingTop: "25px",
+    width: "30%",
     padding: "10px 10px",
   },
   logo: {
-    textAlign: "center",
-    paddingLeft: "50px",
+    paddingLeft: "10px",
+    fontWeight: "bold",
+    // textAlign: "center",
+    // paddingLeft: "50px",
   },
   main: {
     padding: "30px 30px",
@@ -284,6 +289,7 @@ const Doctor = () => {
           break;
         case 2:
           feverType = "Increase at night";
+          break;
         default:
           feverType = "None";
           break;
@@ -329,6 +335,7 @@ const Doctor = () => {
       }
 
       let stateData = {
+        ticketStatus: respData.ticket_status,
         covidClass: respData.covid_class,
         hasPresc,
         symptoms: {
@@ -453,6 +460,10 @@ const Doctor = () => {
           let feverType;
           let bodyPainType;
           let coughType;
+          let comArray = resp2.data.symptoms.comorbidities;
+          let comArrNew = comArray.map((item) => {
+            return capitaliseWord(item);
+          });
 
           switch (data.fever_temp) {
             case 0:
@@ -480,6 +491,7 @@ const Doctor = () => {
               break;
             case 2:
               feverType = "Increase at night";
+              break;
             default:
               feverType = "None";
               break;
@@ -525,6 +537,7 @@ const Doctor = () => {
           }
 
           let stateData = {
+            comString: comArrNew.join(" , "),
             covidClass: respData.covid_class,
             hasPresc,
             ticketStatus: respData.ticket_status,
@@ -624,10 +637,18 @@ const Doctor = () => {
                 <div className={classes.reportSec}>
                   <div className={classes.fieldCont}>
                     <span className={classes.respFieldHeader}>
-                      No of days since onset of symptomps-
+                      No of days since onset of symptoms -
                     </span>
                     <span className={classes.respValue}>
                       {payload.symptoms.days}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respFieldHeader}>
+                      Comorbidities{" "}
+                    </span>
+                    <span className={classes.respValue}>
+                      {payload.comString}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
@@ -806,7 +827,7 @@ const Doctor = () => {
             ) : (
               <div>
                 {payload.ticketStatus === "closed" ? (
-                  <div>This ticket has already closed</div>
+                  <div>Thank you for your time. This ticket has closed</div>
                 ) : (
                   <>
                     {!payload.hasPresc ? (
@@ -824,16 +845,14 @@ const Doctor = () => {
                               </button>
                               <button
                                 onClick={() => {
-                                  appointmentSubmitHandler("offline");
+                                  appointmentSubmitHandler("diagnostic");
                                 }}
                                 className={classes.apptBtn}
                               >
                                 Recommend Offline consultation
                               </button>
                             </div>
-                            <div className={classes.orBox}>
-                              Or Prescrbe medicine
-                            </div>
+                            <div className={classes.orBox}>Or</div>
                           </>
                         ) : (
                           <></>
@@ -841,6 +860,9 @@ const Doctor = () => {
 
                         <>
                           <>
+                            <div className={classes.orBox}>
+                              Please Prescribe medicine
+                            </div>
                             <form
                               style={styleForm}
                               onChange={formChangeHandler}
@@ -892,7 +914,7 @@ const Doctor = () => {
                                   { value: "viral", label: "Viral" },
                                 ]}
                                 onChange={onSelectFeedback}
-                                placeholder="Type of illness"
+                                placeholder="What is your intuition about the type of fever"
                               />
 
                               <button className={classes.btnSubmit}>
@@ -903,7 +925,9 @@ const Doctor = () => {
                         </>
                       </>
                     ) : (
-                      <div>Already Prescrbibed</div>
+                      <div>
+                        Thankyou . Your prescription has been sent to the user.
+                      </div>
                     )}
                   </>
                 )}

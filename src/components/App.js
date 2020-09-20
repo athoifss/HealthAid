@@ -23,6 +23,8 @@ const drawerWidthVal = 280;
 
 const styleIframe = {
   border: "1px solid red",
+  padding: 0,
+  margin: 0,
 };
 
 const useStyles = makeStyles(() => ({
@@ -68,12 +70,29 @@ const useStyles = makeStyles(() => ({
     justifyContent: "center",
     border: "none",
   },
+  modalTop: {
+    width: "100%",
+    borderBottom: "1px solid rgba(1,1,1,0.1)",
+    background: "white",
+    paddingRight: "10px",
+    height: "60px",
+    display: "flex",
+    alignItems: "center",
+    paddingLeft: "20px",
+    fontSize: "1.4em",
+  },
   modalContent: {
     display: "flex",
     flexDirection: "column",
     border: "none",
-    padding: "5px 20px",
+    padding: "20px 20px",
     background: "white",
+  },
+  modalBtnClose: {
+    marginLeft: "auto",
+    width: "20px",
+    fontSize: "1.8em",
+    cursor: "pointer",
   },
   router: {
     paddingTop: "65px",
@@ -197,18 +216,28 @@ export default function PersistentDrawerLeft() {
           <Fade in={openModal}>
             <div className={classes.paper}>
               <div id="transition-modal-description">
+                <div className={classes.modalTop}>
+                  <div>HealthAidBot</div>
+                  <div
+                    onClick={handleCloseModal}
+                    className={classes.modalBtnClose}
+                  >
+                    &times;
+                  </div>
+                </div>
                 <div className={classes.modalContent}>
                   <Iframe
                     style={styleIframe}
-                    url={`http://healthbot.centralindia.azurecontainer.io:8080/?userId=${localStorage.getItem(
+                    url={`http://healthaidbot.southindia.azurecontainer.io:8080/?userId=${localStorage.getItem(
                       "userId"
                     )}`}
-                    width="500px"
-                    height="600px"
+                    width="650px"
+                    height="550px"
                     id="myId"
                     className="myClassname"
                     display="initial"
                     position="relative"
+                    frameBorder="0"
                   />
                 </div>
               </div>

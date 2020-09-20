@@ -59,11 +59,14 @@ export default class Example extends PureComponent {
   static jsfiddleUrl = "https://jsfiddle.net/alidingling/pb1jwdt1/";
   constructor(props) {
     super(props);
-    this.state = { areaStats: { percent: [], count: [] } };
+    this.state = { areaStats: { percent: [], count: [] }, areaName: " " };
   }
 
   componentDidMount() {
     let userId = localStorage.getItem("userId");
+    getRequest(`Users/${userId}`).then((resp) => {
+      this.setState({ areaName: resp.data.area_name });
+    });
     getRequest(`Users/area/stats/${userId}`).then((resp) => {
       let newPercent = [];
       let newCount = [];
@@ -94,7 +97,7 @@ export default class Example extends PureComponent {
     return (
       <div>
         <div style={{ padding: "20px 5px 20px 10px", fontSize: "1.5em" }}>
-          Area Statistics
+          {this.state.areaName} Statistics
         </div>
         <div
           style={{

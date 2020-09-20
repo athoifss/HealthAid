@@ -1,6 +1,5 @@
 import React from "react";
 import { makeStyles } from "@material-ui/core/styles";
-
 import style from "../common/style.js";
 
 const useStyles = makeStyles(() => ({
@@ -8,7 +7,7 @@ const useStyles = makeStyles(() => ({
     background: "transparent",
     display: "flex",
     width: "100%",
-    alignItems: "center"
+    alignItems: "center",
   },
   logo: {
     fontSize: "2em",
