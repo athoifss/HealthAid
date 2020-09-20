@@ -436,11 +436,15 @@ const Doctor = () => {
     const url = new URL(window.location.href);
     let userId = url.searchParams.get("userId");
 
-    getRequest(`Users/${userId}`)
+    getRequest(`Users/${userId}`).then((resp) => {
+      setUser(resp.data);
+    });
+
+    postRequest(`Tickets/latest`, { user_id: parseInt(userId) })
       .then((resp) => {
-        setUser(resp.data);
-        let ticketId = resp.data.active_ticket.ticket_id;
+        let ticketId = resp.data.latest_ticket.ticket_id;
         setTicketId(ticketId);
+
         getRequest(`Tickets/${ticketId}`).then((resp2) => {
           let respData = resp2.data;
           let data = resp2.data.symptoms.symptoms;

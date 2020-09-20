@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { makeStyles, emphasize } from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/core/styles";
 import { getRequest } from "../common/api.js";
+
+import { capitaliseWord } from "../common/helper";
 
 const useStyles = makeStyles(() => ({
   root: { paddingLeft: "10px" },
@@ -42,6 +44,7 @@ const TicketDetails = () => {
   const [ticket, setTicket] = useState({
     presc: [],
     symptoms: {
+      comorbidities: " ",
       fever: {
         feverTemp: "",
         feverType: "",
@@ -78,12 +81,23 @@ const TicketDetails = () => {
     console.log(ticketId);
 
     getRequest(`Tickets/${ticketId}`).then((resp) => {
-      let data = resp.data.symptoms.symptoms;
+      let data = {};
+
+      let comArray = [];
+
+      if (!resp.data.symptoms) {
+        data = ticket;
+      } else {
+        data = resp.data.symptoms.symptoms;
+        comArray = data.comorbidities;
+      }
       let respData = resp.data;
       let feverTemp;
       let feverType;
       let bodyPainType;
       let coughType;
+
+      let comString = comArray.join(",");
 
       switch (data.fever_temp) {
         case 0:
@@ -155,6 +169,8 @@ const TicketDetails = () => {
       }
 
       let stateData = {
+        comString,
+        ticketStatus: respData.ticket_status,
         hasPresc: respData.has_prescription,
         presc: respData.prescription,
         symptoms: {
@@ -194,181 +210,203 @@ const TicketDetails = () => {
 
   return (
     <div className={classes.root}>
-      <div className={classes.secCont}>
-        <div className={classes.secHeader}>Doctor Prescription</div>
-        <div className={classes.secContent}>
-          {ticket.hasPresc ? (
-            <div>
-              {ticket.presc.map((item) => {
-                return (
-                  <div className={classes.medCont}>
-                    <div className={classes.medName}>{item.name}</div>
-                    <div className={classes.medDose}>{item.dosage}</div>
-                  </div>
-                );
-              })}
+      {ticket.ticketStatus === "open" ? (
+        <div> Please consult first </div>
+      ) : (
+        <>
+          <div className={classes.secCont}>
+            <div className={classes.secHeader}>Doctor Prescription</div>
+            <div className={classes.secContent}>
+              {ticket.hasPresc ? (
+                <div>
+                  {ticket.presc.map((item) => {
+                    return (
+                      <div className={classes.medCont}>
+                        <div className={classes.medName}>{item.name}</div>
+                        <div className={classes.medDose}>{item.dosage}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div>
+                  {ticket.ticketStatus === "closed" ? (
+                    <em>Ticket has been closed with no prescription</em>
+                  ) : (
+                    <em>Waiting for remote doctor to prescribe medicines</em>
+                  )}
+                </div>
+              )}
             </div>
-          ) : (
-            <div>
-              <em>Waiting for remote doctor to prescribe medicines</em>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className={classes.secCont}>
-        <div className={classes.secHeader}>Report</div>
-        <div className={classes.secContent}>
-          <div className={classes.reportRoot}>
-            <div className={classes.reportSec}>
-              <div className={classes.fieldCont}>
-                <span className={classes.respFieldHeader}>
-                  No of days since onset of symptomps-
-                </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.days}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respFieldHeader}>Allergy- </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.allergy}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respFieldHeader}>
-                  Urinary Infection{" "}
-                </span>
-                <span className={classes.respValue}>{ticket.symptoms.ui}</span>
-              </div>
-            </div>
-            <div className={classes.reportSec}>
-              <span
-                className={`${classes.respField} ${classes.respFieldHeader}`}
-              >
-                Fever -
-              </span>
-              <span> {ticket.symptoms.feverBool}</span>
-              {ticket.symptoms.feverBool === "Yes" ? (
+          </div>
+          <div className={classes.secCont}>
+            <div className={classes.secHeader}>Report</div>
+            <div className={classes.secContent}>
+              <div className={classes.reportRoot}>
                 <div className={classes.reportSec}>
                   <div className={classes.fieldCont}>
-                    <span className={classes.respField}>Fever Temp - </span>
+                    <span className={classes.respFieldHeader}>
+                      Comorbidities
+                    </span>
                     <span className={classes.respValue}>
-                      {ticket.symptoms.fever.feverTemp}
+                      {ticket.comString}
                     </span>
                   </div>
                   <div className={classes.fieldCont}>
-                    <span className={classes.respField}>Fever Type - </span>
+                    <span className={classes.respFieldHeader}>
+                      No of days since onset of symptoms-
+                    </span>
                     <span className={classes.respValue}>
-                      {ticket.symptoms.fever.feverType}
+                      {ticket.symptoms.days}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respFieldHeader}>Allergy- </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.allergy}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respFieldHeader}>
+                      Urinary Infection{" "}
+                    </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.ui}
                     </span>
                   </div>
                 </div>
-              ) : (
-                <></>
-              )}
-            </div>
+                <div className={classes.reportSec}>
+                  <span
+                    className={`${classes.respField} ${classes.respFieldHeader}`}
+                  >
+                    Fever -
+                  </span>
+                  <span> {ticket.symptoms.feverBool}</span>
+                  {ticket.symptoms.feverBool === "Yes" ? (
+                    <div className={classes.reportSec}>
+                      <div className={classes.fieldCont}>
+                        <span className={classes.respField}>Fever Temp - </span>
+                        <span className={classes.respValue}>
+                          {ticket.symptoms.fever.feverTemp}
+                        </span>
+                      </div>
+                      <div className={classes.fieldCont}>
+                        <span className={classes.respField}>Fever Type - </span>
+                        <span className={classes.respValue}>
+                          {ticket.symptoms.fever.feverType}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <></>
+                  )}
+                </div>
 
-            <div className={classes.reportSec}>
-              <div
-                className={`${classes.respField} ${classes.respFieldHeader}`}
-              >
-                Gastrointestinal (GI) symptoms
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Vomit - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.gi.vomit}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Diarrhea - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.gi.diarrhea}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Abdominal Pain - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.gi.abdominalPain}
-                </span>
-              </div>
-            </div>
+                <div className={classes.reportSec}>
+                  <div
+                    className={`${classes.respField} ${classes.respFieldHeader}`}
+                  >
+                    Gastrointestinal (GI) symptoms
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Vomit - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.gi.vomit}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Diarrhea - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.gi.diarrhea}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Abdominal Pain - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.gi.abdominalPain}
+                    </span>
+                  </div>
+                </div>
 
-            <div className={classes.reportSec}>
-              <div
-                className={`${classes.respField} ${classes.respFieldHeader}`}
-              >
-                Body Pain
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Body Pain Type - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.bodyPain.bodyPainType}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Headache - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.bodyPain.headache}
-                </span>
-              </div>
-            </div>
+                <div className={classes.reportSec}>
+                  <div
+                    className={`${classes.respField} ${classes.respFieldHeader}`}
+                  >
+                    Body Pain
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Body Pain Type - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.bodyPain.bodyPainType}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Headache - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.bodyPain.headache}
+                    </span>
+                  </div>
+                </div>
 
-            <div className={classes.reportSec}>
-              <div
-                className={`${classes.respField} ${classes.respFieldHeader}`}
-              >
-                Respiratory Disorder
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Cough - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.respDis.cough}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>
-                  Loss of smell and taste -
-                </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.respDis.lossOfSmell}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Sore Throat - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.respDis.soreThroat}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Runny Nose - </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.respDis.runnyNose}
-                </span>
-              </div>
-              <div className={classes.fieldCont}>
-                <span className={classes.respField}>Shortnes of breath -</span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.respDis.soreThroat}
-                </span>
-              </div>
-            </div>
+                <div className={classes.reportSec}>
+                  <div
+                    className={`${classes.respField} ${classes.respFieldHeader}`}
+                  >
+                    Respiratory Disorder
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Cough - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.respDis.cough}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>
+                      Loss of smell and taste -
+                    </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.respDis.lossOfSmell}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Sore Throat - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.respDis.soreThroat}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>Runny Nose - </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.respDis.runnyNose}
+                    </span>
+                  </div>
+                  <div className={classes.fieldCont}>
+                    <span className={classes.respField}>
+                      Shortnes of breath -
+                    </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.respDis.soreThroat}
+                    </span>
+                  </div>
+                </div>
 
-            <div className={classes.reportSec}>
-              <div className={classes.fieldCont}>
-                <span
-                  className={`${classes.respField} ${classes.respFieldHeader}`}
-                >
-                  Recent Covid Interactions -
-                </span>
-                <span className={classes.respValue}>
-                  {ticket.symptoms.covidConnect}
-                </span>
+                <div className={classes.reportSec}>
+                  <div className={classes.fieldCont}>
+                    <span
+                      className={`${classes.respField} ${classes.respFieldHeader}`}
+                    >
+                      Recent Covid Interactions -
+                    </span>
+                    <span className={classes.respValue}>
+                      {ticket.symptoms.covidConnect}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };

@@ -7,7 +7,7 @@ import AddIcon from "@material-ui/icons/ControlPoint";
 import Backdrop from "@material-ui/core/Backdrop";
 import { Fade } from "@material-ui/core";
 import Modal from "@material-ui/core/Modal";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import style from "../common/style";
 const useStyles = makeStyles(() => ({
   root: {
@@ -49,12 +49,13 @@ const useStyles = makeStyles(() => ({
     border: "none",
     color: "white",
     cursor: "pointer",
+    borderRadius: "5px",
   },
   btnClosed: {
     background: "rgba(1,1,1,0.2)",
     display: "block",
     marginLeft: "auto",
-    width: "200px",
+    width: "150px",
     lineHeight: "40px",
     height: "40px",
     padding: "0 5px",
@@ -318,7 +319,7 @@ const Tickets = (props) => {
                 </button>
               ) : (
                 <>
-                  <div className={`${classes.btnClosed}`}>Closed</div>
+                  <div className={`${classes.btnClosed}`}>View Details</div>
                 </>
               )}
               {item.hasAppt ? (
