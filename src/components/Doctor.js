@@ -11,19 +11,14 @@ import AddIcon from "@material-ui/icons/ControlPoint";
 
 const styleAddIcon = {
   position: "absolute",
-  top: "10px",
-  right: "150px",
+  right: "180px",
   fill: style.secondary,
   cursor: "pointer",
 };
 
-const styleDropdown = {
-  marginBottom: "20px",
-};
-
 const styleForm = {
+  display: "block",
   position: "relative",
-  border: "1px solid red",
 };
 
 const useStyles = makeStyles(() => ({
@@ -34,7 +29,6 @@ const useStyles = makeStyles(() => ({
     boxSizing: "border-box",
 
     "& td": {
-      // border: "1px solid blue",
       height: "35px",
       textAlign: "left",
       width: "250px",
@@ -43,7 +37,6 @@ const useStyles = makeStyles(() => ({
     "& th": {
       textAlign: "left",
       height: "50px",
-      // border: "1px solid red",
     },
   },
   topBar: {
@@ -147,7 +140,6 @@ const useStyles = makeStyles(() => ({
   },
   orBox: {
     padding: "20px 0",
-    // border: "1px solid red",
   },
   dropdown: {
     marginBottom: "20px",
@@ -226,7 +218,6 @@ const Doctor = () => {
     console.log(newData);
     setPresc(newData);
   }
-
   function switchScreen(screen) {
     if (screen === "report") {
       setScreen("report");
@@ -234,19 +225,16 @@ const Doctor = () => {
       setScreen("presc");
     }
   }
-
   function bool(a) {
     if (a == 1) return "Yes";
     else if (a == 0) return "No";
     else return "None";
   }
-
   function formChangeHandler(e) {
     let newData = { ...formData };
     newData[e.target.name] = e.target.value;
     setFormData(newData);
   }
-
   function appointmentSubmitHandler(type) {
     postRequest("Appointment/change", {
       ticket_id: parseInt(ticketId),
@@ -261,7 +249,6 @@ const Doctor = () => {
         console.log(err);
       });
   }
-
   function onSubmitResponse() {
     getRequest(`Tickets/${ticketId}`).then((resp2) => {
       let respData = resp2.data;
@@ -399,14 +386,13 @@ const Doctor = () => {
       ticketClose = true;
     }
 
-    let feedbackData = {
+    let feedbackPostData = {
       ticket_id: ticketId,
       feedback: feedbackData.feedback,
-      monitoring_days: feedbackData.monitoring_days,
+      monitoring_days: feedbackData.monitoring,
       ticket_close: ticketClose,
     };
 
-    console.log(actualData);
     let postData = {
       ticket_id: ticketId,
       prescription: actualData,
@@ -414,8 +400,7 @@ const Doctor = () => {
     postRequest("Prescription/add", postData)
       .then((resp) => {
         console.log("prescription submited");
-
-        postRequest("Tickets/feedback")
+        postRequest("Tickets/feedback", feedbackPostData)
           .then((resp) => {
             console.log("feedback submitted");
             onSubmitResponse();
@@ -431,16 +416,25 @@ const Doctor = () => {
 
   function onSelectDays(e) {
     console.log(e);
-    setFeedbackData(e);
+    let newData = { ...feedbackData };
+    newData.monitoring = e.value;
+
+    setFeedbackData(newData);
+    console.log(newData);
   }
 
   function onSelectFeedback(e) {
     console.log(e);
+    let newData = { ...feedbackData };
+    newData.feedback = e.value;
+
+    setFeedbackData(newData);
+    console.log(newData);
   }
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    let userId = url.searchParams.get("userId"); // => 'hello'
+    let userId = url.searchParams.get("userId");
 
     getRequest(`Users/${userId}`)
       .then((resp) => {
@@ -519,7 +513,7 @@ const Doctor = () => {
               break;
           }
 
-          let hasPresc = true;
+          let hasPresc = false;
           if (respData.prescription) {
             hasPresc = true;
           } else {
@@ -807,100 +801,108 @@ const Doctor = () => {
               </div>
             ) : (
               <div>
-                <form
-                  style={styleForm}
-                  onChange={formChangeHandler}
-                  onSubmit={formSubmitHandler}
-                >
-                  <AddIcon
-                    style={styleAddIcon}
-                    onClick={updatePrescForm}
-                    fontSize="large"
-                  />
-                  {payload.ticketStatus === "closed" ? (
-                    <div>This ticket has already closed</div>
-                  ) : (
-                    <>
-                      {!payload.hasPresc ? (
+                {payload.ticketStatus === "closed" ? (
+                  <div>This ticket has already closed</div>
+                ) : (
+                  <>
+                    {!payload.hasPresc ? (
+                      <>
+                        {payload.covidClass === "Medium" ? (
+                          <>
+                            <div className={classes.buttons}>
+                              <button
+                                onClick={() => {
+                                  appointmentSubmitHandler("covid");
+                                }}
+                                className={classes.apptBtn}
+                              >
+                                Recommend Covid Test
+                              </button>
+                              <button
+                                onClick={() => {
+                                  appointmentSubmitHandler("offline");
+                                }}
+                                className={classes.apptBtn}
+                              >
+                                Recommend Offline consultation
+                              </button>
+                            </div>
+                            <div className={classes.orBox}>
+                              Or Prescrbe medicine
+                            </div>
+                          </>
+                        ) : (
+                          <></>
+                        )}
+
                         <>
                           <>
-                            {payload.covidClass === "Medium" ? (
-                              <>
-                                <div className={classes.buttons}>
-                                  <button
-                                    onClick={() => {
-                                      appointmentSubmitHandler("covid");
-                                    }}
-                                    className={classes.apptBtn}
-                                  >
-                                    Recommend Covid Test
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      appointmentSubmitHandler("offline");
-                                    }}
-                                    className={classes.apptBtn}
-                                  >
-                                    Recommend Offline consultation
-                                  </button>
-                                </div>
-                                <div className={classes.orBox}>
-                                  Or Prescrbe medicine
-                                </div>
-                              </>
-                            ) : (
-                              <></>
-                            )}
+                            <form
+                              style={styleForm}
+                              onChange={formChangeHandler}
+                              onSubmit={formSubmitHandler}
+                            >
+                              <AddIcon
+                                style={styleAddIcon}
+                                onClick={updatePrescForm}
+                                fontSize="large"
+                              />
+                              {presc.data.map((item, i) => {
+                                return (
+                                  <>
+                                    <div className={classes.row}>
+                                      <input
+                                        className={classes.input}
+                                        type="text"
+                                        name={`medicine_${i}`}
+                                        placeholder="Medicine"
+                                      ></input>
+                                      <input
+                                        className={classes.input}
+                                        type="text"
+                                        name={`dosage_${i}`}
+                                        placeholder="Dosage"
+                                      ></input>
+                                    </div>
+                                  </>
+                                );
+                              })}
+
+                              <Dropdown
+                                className={classes.dropdown}
+                                options={[
+                                  { value: 3, label: "3" },
+                                  { value: 5, label: "5" },
+                                ]}
+                                onChange={onSelectDays}
+                                placeholder="Number of days to monitor patient"
+                              />
+                              <Dropdown
+                                className={classes.dropdown}
+                                options={[
+                                  { value: "malerial", label: "Malerial" },
+                                  {
+                                    value: "bacterial",
+                                    label: "Bacterial",
+                                  },
+                                  { value: "viral", label: "Viral" },
+                                ]}
+                                onChange={onSelectFeedback}
+                                placeholder="Type of illness"
+                              />
+
+                              <button className={classes.btnSubmit}>
+                                Submit
+                              </button>
+                            </form>
                           </>
-                          {presc.data.map((item, i) => {
-                            return (
-                              <div className={classes.row}>
-                                <input
-                                  className={classes.input}
-                                  type="text"
-                                  name={`medicine_${i}`}
-                                  placeholder="Medicine"
-                                ></input>
-                                <input
-                                  className={classes.input}
-                                  type="text"
-                                  name={`dosage_${i}`}
-                                  placeholder="Dosage"
-                                ></input>
-                              </div>
-                            );
-                          })}
                         </>
-                      ) : (
-                        <div>Already Prescrbibed</div>
-                      )}
-                    </>
-                  )}
-
-                  <Dropdown
-                    className={classes.dropdown}
-                    options={[
-                      { value: 3, label: "3" },
-                      { value: 5, label: "5" },
-                    ]}
-                    onChange={onSelectDays}
-                    // value={"Material"}
-                    placeholder="Number of days to monitor patient"
-                  />
-                  <Dropdown
-                    className={classes.dropdown}
-                    options={[
-                      { value: "malerial", label: "Malerial" },
-                      { value: "bacterial", label: "Bacterial" },
-                      { value: "viral", label: "Viral" },
-                    ]}
-                    onChange={onSelectFeedback}
-                    // value={"Material"}
-                    placeholder="Type of illness"
-                  />
-
-                  <button className={classes.btnSubmit}>Submit</button>
-                </form>
+                      </>
+                    ) : (
+                      <div>Already Prescrbibed</div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
